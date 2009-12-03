@@ -10,6 +10,7 @@ var snippage = {
 var stored_snippage = localStorage.getItem('snippage');
 if (stored_snippage) {
   snippage = $.evalJSON(stored_snippage);
+  updateBadgeText();
 }
 
 var dump_tab_id;
@@ -51,17 +52,26 @@ function getSnipPage() {
   return snippage;
 }
 
+function updateLocalStorage() {
+  localStorage.setItem('snippage', $.toJSON(snippage));
+}
+
 function clearCopy() {
   snippage.title = '';
   snippage.snippets = [];
+  localStorage.removeItem('snippage');
   updateBadgeText();
   if (dump_tab_id) {
     chrome.tabs.remove(dump_tab_id);
   }
 }
 
-function docs() {
-  chrome.tabs.create({"url": "docs_test.html"});
+function about() {
+  chrome.tabs.create({"url": "about.html"});
+}
+
+function bug() {
+  chrome.tabs.create({"url": "bug.html"});
 }
 
 function updateBadgeText() {
@@ -87,13 +97,20 @@ chrome.tabs.onSelectionChanged.addListener(function(tab_id) {
 
 chrome.extension.onRequest.addListener(
   function(request, sender, sendResponse) {
-    snippet = {
-      content: request.content,
-      url: request.url
-    };
-    snippage.snippets[snippage.snippets.length] = snippet;
-    localStorage.setItem('snippage', $.toJSON(snippage));
-    updateBadgeText();
+    if (request.toggle) {
+      toggle();
+    } else if (request.showdump) {
+      toggleOff();
+      showDump();
+    } else {
+      snippet = {
+        content: request.content,
+        url: request.url
+      };
+      snippage.snippets[snippage.snippets.length] = snippet;
+      localStorage.setItem('snippage', $.toJSON(snippage));
+      updateBadgeText();
+    }
     sendResponse({});
   }
 );
